@@ -3,14 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>LIRA - Portal de Datasheets</title>
+    <title>LIRA - Banco de Datasheets</title>
     
-    <!-- Bootstrap 5 (Estilos estables de alta velocidad) -->
+    <!-- Bootstrap 5 -->
     <link href="https://jsdelivr.net" rel="stylesheet">
     
-    <!-- Vinculación opcional a tu carpeta local static/css -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
-
     <style>
         body { background-color: #0c0f12; color: #e0e0e0; padding-top: 5.5rem; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .card { background-color: #15191e; border: 1px solid #252b33; color: #e0e0e0; border-radius: 12px; }
@@ -40,7 +37,7 @@
 </nav>
 
 <div class="container">
-    <!-- Contenedor de Alertas (Mensajes del Cerebro) -->
+    <!-- Contenedor de Alertas Flotantes -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
@@ -53,36 +50,47 @@
     {% endwith %}
 
     <div class="row g-4">
-        <!-- Panel Izquierdo: Formulario de Carga Física -->
+        <!-- Panel Izquierdo: Formulario con Llave de Creador -->
         <div class="col-md-4">
             <div class="card shadow p-4">
                 <h4 class="fw-bold mb-3 text-info">Subir Componente</h4>
-                <p class="text-muted small">Registra un nuevo elemento electrónico en el inventario del laboratorio y almacena su archivo técnico permanente.</p>
+                <p class="text-muted small">Módulo de inventariado técnico de LIRA. Requiere credenciales de acceso para guardar archivos en el servidor público.</p>
                 <hr class="border-secondary mb-4">
                 
                 <form action="/" method="POST" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label class="form-label fw-semibold text-light">Nombre del Componente</label>
-                        <input type="text" name="component_name" class="form-control" placeholder="Ej: Transistor NPN de alta potencia" required>
+                        <input type="text" name="component_name" class="form-control" placeholder="Ej: Transistor NPN TIP31C" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-light">Número de Parte</label>
+                        <label class="form-label fw-semibold text-light">Número de Parte / Matrícula</label>
                         <input type="text" name="part_number" class="form-control" placeholder="Ej: TIP31C" required>
                     </div>
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label class="form-label fw-semibold text-light">Archivo PDF (Datasheet)</label>
                         <input type="file" name="pdf_file" class="form-control" accept=".pdf" required>
                     </div>
+                    
+                    <!-- 🔐 FILTRO DE SEGURIDAD PARA EL CREADOR -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-warning">🔑 Clave Maestra de Administrador</label>
+                        <input type="password" name="admin_password" class="form-control border-warning shadow-sm" placeholder="Introduce tu clave secreta" required>
+                    </div>
+                    
                     <button type="submit" class="btn btn-primary w-100 fw-bold py-2 fs-5 shadow-sm">Subir al Almacén LIRA 💾</button>
                 </form>
             </div>
         </div>
 
-        <!-- Panel Derecho: Tabla de Componentes del Laboratorio -->
+        <!-- Panel Derecho: Tabla Dinámica con Buscador Integrado -->
         <div class="col-md-8">
             <div class="card shadow p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="fw-bold text-light m-0">Documentos Indexados en la Base de Datos</h4>
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-3">
+                    <h4 class="fw-bold text-light m-0">Documentos Indexados</h4>
+                    <!-- 🔍 BARRA DE BÚSQUEDA DINÁMICA -->
+                    <div style="max-width: 320px;" class="w-100">
+                        <input type="text" id="buscador" class="form-control" placeholder="🔍 Buscar por nombre o matrícula...">
+                    </div>
                 </div>
                 <hr class="border-secondary mb-4">
                 
@@ -95,20 +103,19 @@
                                 <th class="pb-3 text-center">Acción</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="cuerpo-tabla">
                             {% for datasheet in datasheets %}
-                            <tr class="border-bottom border-dark">
-                                <td class="fw-medium text-white py-3">{{ datasheet.component_name }}</td>
-                                <td><span class="badge bg-dark border border-secondary text-info fw-bold">{{ datasheet.part_number }}</span></td>
+                            <tr class="border-bottom border-dark fila-componente">
+                                <td class="fw-medium text-white py-3 nombre-comp">{{ datasheet.component_name }}</td>
+                                <td><span class="badge bg-dark border border-secondary text-info fw-bold matricula-comp">{{ datasheet.part_number }}</span></td>
                                 <td class="text-center">
                                     <a href="{{ url_for('uploaded_file', filename=datasheet.filename) }}" target="_blank" class="btn btn-sm btn-outline-info fw-bold px-3 py-1.5 shadow-sm">👁️ Abrir PDF</a>
                                 </td>
                             </tr>
                             {% else %}
-                            <tr>
+                            <tr id="fila-vacia">
                                 <td colspan="3" class="text-center text-muted py-5">
                                     <p class="m-0 fs-5 text-secondary">📂 El almacén digital de LIRA está vacío.</p>
-                                    <p class="small text-muted m-0 mt-1">Usa el formulario técnico de la izquierda para registrar componentes.</p>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -120,10 +127,25 @@
     </div>
 </div>
 
-<!-- Bootstrap 5 JavaScript -->
 <script src="https://jsdelivr.net"></script>
 
-<!-- Vinculación opcional a tu carpeta local static/js -->
-<script src="{{ url_for('static', filename='js/funciones.js') }}"></script>
+<!-- 🧠 SCRIPT INTELIGENTE DEL BUSCADOR EN TIEMPO REAL -->
+<script>
+    document.getElementById('buscador').addEventListener('input', function() {
+        let filtro = this.value.toLowerCase().trim();
+        let filas = document.querySelectorAll('.fila-componente');
+        
+        filas.forEach(function(fila) {
+            let nombre = fila.querySelector('.nombre-comp').textContent.toLowerCase();
+            let matricula = fila.querySelector('.matricula-comp').textContent.toLowerCase();
+            
+            if (nombre.includes(filtro) || matricula.includes(filtro)) {
+                fila.style.display = '';
+            } else {
+                fila.style.display = 'none';
+            }
+        });
+    });
+</script>
 </body>
 </html>
