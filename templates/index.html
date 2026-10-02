@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LIRA - Portal de Datasheets</title>
+    
+    <!-- Bootstrap 5 (Estilos estables de alta velocidad) -->
+    <link href="https://jsdelivr.net" rel="stylesheet">
+    
+    <!-- Vinculación opcional a tu carpeta local static/css -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+
+    <style>
+        body { background-color: #0c0f12; color: #e0e0e0; padding-top: 5.5rem; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { background-color: #15191e; border: 1px solid #252b33; color: #e0e0e0; border-radius: 12px; }
+        .form-control, .form-control:focus { background-color: #212730; border-color: #2d3540; color: #fff; border-radius: 8px; }
+        .form-control::placeholder { color: #5c6975; }
+        .table { --bs-table-bg: #15191e; --bs-table-color: #e0e0e0; border-color: #252b33; }
+        .navbar { background-color: #0d1b2a !important; border-bottom: 2px solid #00b4d8; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
+        .btn-primary { background-color: #00b4d8; border: none; border-radius: 8px; color: #0d1b2a; transition: all 0.2s ease; }
+        .btn-primary:hover { background-color: #0096c7; color: #fff; transform: translateY(-1px); }
+        .badge { font-size: 0.9rem; padding: 0.5em 0.75em; border-radius: 6px; }
+        .badge-lira { background-color: #00b4d8; color: #0d1b2a; font-weight: 800; letter-spacing: 0.5px; }
+    </style>
+</head>
+<body>
+
+<!-- 🤖 Barra de Navegación Superior - Sello Oficial LIRA -->
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold d-flex align-items-center fs-4" href="#">
+            <span class="badge badge-lira me-2 shadow-sm">🤖 LIRA</span> 
+            <span class="text-white fw-light fs-5">| BANCO DE DATASHEETS</span>
+        </a>
+        <span class="navbar-text d-none d-md-inline text-info small fw-semibold">
+            Laboratorio de Investigación de Robótica Aplicada
+        </span>
+    </div>
+</nav>
+
+<div class="container">
+    <!-- Contenedor de Alertas (Mensajes del Cerebro) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show border-0 shadow-sm" role="alert">
+            {% if category == 'success' %}✅{% else %}⚠️{% endif %} {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="row g-4">
+        <!-- Panel Izquierdo: Formulario de Carga Física -->
+        <div class="col-md-4">
+            <div class="card shadow p-4">
+                <h4 class="fw-bold mb-3 text-info">Subir Componente</h4>
+                <p class="text-muted small">Registra un nuevo elemento electrónico en el inventario del laboratorio y almacena su archivo técnico permanente.</p>
+                <hr class="border-secondary mb-4">
+                
+                <form action="/" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-light">Nombre del Componente</label>
+                        <input type="text" name="component_name" class="form-control" placeholder="Ej: Transistor NPN de alta potencia" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-light">Número de Parte</label>
+                        <input type="text" name="part_number" class="form-control" placeholder="Ej: TIP31C" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-light">Archivo PDF (Datasheet)</label>
+                        <input type="file" name="pdf_file" class="form-control" accept=".pdf" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold py-2 fs-5 shadow-sm">Subir al Almacén LIRA 💾</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Panel Derecho: Tabla de Componentes del Laboratorio -->
+        <div class="col-md-8">
+            <div class="card shadow p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="fw-bold text-light m-0">Documentos Indexados en la Base de Datos</h4>
+                </div>
+                <hr class="border-secondary mb-4">
+                
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle">
+                        <thead>
+                            <tr class="text-muted border-bottom border-secondary">
+                                <th class="pb-3">Componente</th>
+                                <th class="pb-3">Matrícula / Parte</th>
+                                <th class="pb-3 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for datasheet in datasheets %}
+                            <tr class="border-bottom border-dark">
+                                <td class="fw-medium text-white py-3">{{ datasheet.component_name }}</td>
+                                <td><span class="badge bg-dark border border-secondary text-info fw-bold">{{ datasheet.part_number }}</span></td>
+                                <td class="text-center">
+                                    <a href="{{ url_for('uploaded_file', filename=datasheet.filename) }}" target="_blank" class="btn btn-sm btn-outline-info fw-bold px-3 py-1.5 shadow-sm">👁️ Abrir PDF</a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-5">
+                                    <p class="m-0 fs-5 text-secondary">📂 El almacén digital de LIRA está vacío.</p>
+                                    <p class="small text-muted m-0 mt-1">Usa el formulario técnico de la izquierda para registrar componentes.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JavaScript -->
+<script src="https://jsdelivr.net"></script>
+
+<!-- Vinculación opcional a tu carpeta local static/js -->
+<script src="{{ url_for('static', filename='js/funciones.js') }}"></script>
+</body>
+</html>
